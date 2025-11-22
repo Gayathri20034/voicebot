@@ -1,12 +1,13 @@
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from openai import OpenAI
+from groq import Groq   # Using Groq API
 
 app = Flask(__name__, static_folder="static", template_folder="static")
 CORS(app)
 
-client = OpenAI()  # reads OPENAI_API_KEY from environment variable
+# Groq client (reads key from environment variable)
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 SYSTEM_PROMPT = """
 You are a voice assistant that speaks AS Gayathri Nambiar (Gaya). 
@@ -39,7 +40,7 @@ def chat():
     user_message = data.get("message", "")
 
     completion = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="llama3-8b-8192",  # Groq free model
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message}
@@ -47,7 +48,7 @@ def chat():
         temperature=0.7
     )
 
-    reply = completion.choices[0].message.content
+    reply = completion.choices[0].message["content"]
     return jsonify({"reply": reply})
 
 if __name__ == "__main__":
