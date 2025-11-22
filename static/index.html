@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Gayathri – Voice Bot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f7f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 480px;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 18px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 18px;
+    }
+
+    button {
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #584df2;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 55px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 0.95rem;
+      margin-top: 10px;
+      resize: none;
+    }
+
+    .bubble {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      text-align: left;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .user-bubble {
+      background: #e3f2fd;
+    }
+
+    .bot-bubble {
+      background: #ede7ff;
+    }
+
+    #micStatus {
+      color: #444;
+      margin-top: 6px;
+      font-size: 0.85rem;
+    }
+
+    .footer {
+      margin-top: 12px;
+      font-size: 0.7rem;
+      color: #777;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Meet Gayathri (Voice Bot)</h1>
+    <div class="subtitle">
+      Ask: “What’s your life story?” “What’s your superpower?” etc.
+    </div>
+
+    <button id="micBtn">🎙️ Start Talking</button>
+    <div id="micStatus"></div>
+
+    <textarea id="textInput" placeholder="Or type your question here..."></textarea>
+    <button id="sendBtn">Send</button>
+
+    <div id="conversation"></div>
+
+    <div class="footer">Voice bot demo using Flask + ChatGPT</div>
+  </div>
+
+  <script>
+    const micBtn = document.getElementById("micBtn");
+    const micStatus = document.getElementById("micStatus");
+    const textInput = document.getElementById("textInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const conversationDiv = document.getElementById("conversation");
+
+    let recognizing = false;
+    let recognition = null;
+
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-IN";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = function () {
+        recognizing = true;
+        micBtn.textContent = "🎙️ Listening...";
+        micStatus.textContent = "Listening… please speak.";
+      };
+
+      recognition.onerror = function () {
+        recognizing = false;
+        micBtn.textContent = "🎙️ Start Talking";
+        micStatus.textContent = "Couldn't hear you. Try again!";
+      };
+
+      recognition.onend = function () {
+        recognizing = false;
+        micBtn.textContent = "🎙️ Start Talking";
+      };
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        micStatus.textContent = `You said: "${transcript}"`;
+        sendMessage(transcript);
+      };
+
+      micBtn.onclick = function () {
+        if (!recognizing) recognition.start();
+        else recognition.stop();
+      };
+    } else {
+      micBtn.disabled = true;
+      micStatus.textContent = "Speech recognition not supported on this device.";
+    }
+
+    sendBtn.onclick = function () {
+      const text = textInput.value.trim();
+      if (!text) return;
+      sendMessage(text);
+    };
+
+    function updateConversation(userText, botText) {
+      conversationDiv.innerHTML = "";
+
+      const u = document.createElement("div");
+      u.className = "bubble user-bubble";
+      u.textContent = userText;
+
+      const b = document.createElement("div");
+      b.className = "bubble bot-bubble";
+      b.textContent = botText;
+
+      conversationDiv.appendChild(u);
+      conversationDiv.appendChild(b);
+    }
+
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-IN";
+      window.speechSynthesis.speak(utter);
+    }
+
+    async function sendMessage(message) {
+      textInput.value = "";
+      micStatus.textContent = "";
+
+      updateConversation(message, "Thinking…");
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+        const reply = data.reply;
+
+        updateConversation(message, reply);
+        speak(reply);
+      } catch (error) {
+        updateConversation(message, "Error: Server not reachable.");
+      }
+    }
+  </script>
+</body>
+</html>
