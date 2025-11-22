@@ -40,13 +40,14 @@ def chat():
     user_message = data.get("message", "")
 
     completion = client.chat.completions.create(
-        model="llama3-8b-8192",  # Groq free model
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=0.7
-    )
+    model="llama3-70b-8192",
+    messages=[
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_message}
+    ],
+    temperature=0.7
+)
+
 
     reply = completion.choices[0].message["content"]
     return jsonify({"reply": reply})
