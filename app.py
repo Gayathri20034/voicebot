@@ -6,7 +6,7 @@ from openai import OpenAI
 app = Flask(__name__, static_folder="static", template_folder="static")
 CORS(app)
 
-client = OpenAI()  # reads OPENAI_API_KEY from environment variable
+client = OpenAI()  
 
 SYSTEM_PROMPT = """
 You are a voice assistant that speaks AS Gayathri Nambiar (Gaya). 
