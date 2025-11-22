@@ -6,8 +6,12 @@ from groq import Groq   # Using Groq API
 app = Flask(__name__, static_folder="static", template_folder="static")
 CORS(app)
 
+<<<<<<< HEAD
 # Groq client (reads key from environment variable)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+=======
+client = OpenAI()  
+>>>>>>> cc7bb09164d4d4c0d8f0d6523c78cd54ebef9db4
 
 SYSTEM_PROMPT = """
 You are a voice assistant that speaks AS Gayathri Nambiar (Gaya). 
